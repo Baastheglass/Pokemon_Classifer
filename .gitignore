@@ -1,3 +1,11 @@
 images/
 pokemon.csv
 env/
+best_pokemon_model.h5
+label_mapping.json
+pokemon_model_fold_1.h5
+pokemon_model_metadata.json
+training_log_fold_1.csv
+training_log.csv
+training_metrics.png
+augmented_images/
