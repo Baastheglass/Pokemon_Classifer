@@ -665,17 +665,31 @@ class PokemonClassifier:
             # Recreate model for each fold
             self.model = self.create_model(num_classes=labels.shape[1], model_type='efficientnetv2')
             
-            # Data augmentation for training
-            datagen = ImageDataGenerator(
+            # Data augmentation
+            train_datagen = ImageDataGenerator(
                 horizontal_flip=True,
                 rotation_range=10,
                 zoom_range=0.1,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
-                brightness_range=(0.9, 1.1),
-                fill_mode='nearest'
+                brightness_range=(0.9, 1.1)
             )
             
+            # Create infinite generators using while True loop
+            def infinite_train_generator():
+                while True:
+                    for batch in train_datagen.flow(X_train, y_train, batch_size=batch_size):
+                        yield batch
+            
+            def infinite_val_generator():
+                while True:
+                    for batch in ImageDataGenerator().flow(X_val, y_val, batch_size=batch_size):
+                        yield batch
+            
+            # Calculate steps per epoch
+            train_steps = max(1, len(X_train) // batch_size)
+            val_steps = max(1, len(X_val) // batch_size)
+
             # Callbacks
             reduce_lr = ReduceLROnPlateau(
                 monitor='val_loss', 
@@ -701,28 +715,42 @@ class PokemonClassifier:
             
             csv_logger = CSVLogger(f'training_log_fold_{fold+1}.csv')
             
-            # First stage: Train with frozen base model
-            print(f"\nStage 1: Training with frozen base model")
+            # ========= STAGE 1: Frozen Base =========
             history1 = self.model.fit(
-                datagen.flow(X_train, y_train, batch_size=batch_size),
-                steps_per_epoch=max(1, len(X_train) // batch_size),  # Add max(1, ...) to prevent 0 steps
+                infinite_train_generator(),
+                steps_per_epoch=train_steps,
                 epochs=epochs // 2,
-                validation_data=(X_val, y_val),
-                callbacks=[reduce_lr, early_stopping, model_checkpoint, csv_logger]
-            )
-
-            # Second stage: Fine-tuning
-            print(f"\nStage 2: Fine-tuning the model")
-            self.model = self.fine_tune_model(self.model)
-
-            history2 = self.model.fit(
-                datagen.flow(X_train, y_train, batch_size=batch_size // 2),
-                steps_per_epoch=max(1, len(X_train) // (batch_size // 2)),  # Add max(1, ...) here too
-                epochs=epochs // 2,
-                validation_data=(X_val, y_val),
+                validation_data=infinite_val_generator(),
+                validation_steps=val_steps,
                 callbacks=[reduce_lr, early_stopping, model_checkpoint, csv_logger]
             )
             
+            # ========= STAGE 2: Fine-Tuning =========
+            print("\nStarting Fine-Tuning Stage")
+            self.model = self.fine_tune_model(self.model)
+            
+            # Create generator with smaller batch size for fine-tuning
+            def infinite_fine_tune_generator():
+                while True:
+                    for batch in train_datagen.flow(X_train, y_train, batch_size=batch_size//2):
+                        yield batch
+            
+            fine_tune_steps = max(1, len(X_train) // (batch_size // 2))
+            
+            history2 = self.model.fit(
+                infinite_fine_tune_generator(),
+                steps_per_epoch=fine_tune_steps,
+                epochs=epochs // 2,
+                validation_data=infinite_val_generator(),
+                validation_steps=val_steps,
+                callbacks=[reduce_lr, early_stopping, model_checkpoint, csv_logger]
+            )
+            
+            # Combine histories
+            combined_history = {k: history1.history[k] + history2.history[k] 
+                            for k in history1.history}
+            fold_histories.append(combined_history)
+                
             # Load the best model for this fold
             self.model = load_model(fold_model_path)
             
@@ -732,13 +760,6 @@ class PokemonClassifier:
             
             print(f"\nFold {fold+1} - Validation Accuracy: {val_results[1]:.4f}")
             print(f"Fold {fold+1} - Top-3 Accuracy: {val_results[2]:.4f}")
-            
-            # Combine both history objects
-            combined_history = {}
-            for key in history1.history:
-                combined_history[key] = history1.history[key] + history2.history[key]
-                
-            fold_histories.append(combined_history)
             
             # Save best model across folds
             if val_results[1] > best_score:
@@ -758,7 +779,7 @@ class PokemonClassifier:
         print(f"\nMean Validation Accuracy: {mean_accuracy:.4f} ± {std_accuracy:.4f}")
         
         return fold_histories
-
+    
     def _plot_combined_histories(self, histories):
         """Plot the training history across all folds"""
         plt.figure(figsize=(14, 10))
