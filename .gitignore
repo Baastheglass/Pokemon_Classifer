@@ -9,3 +9,4 @@ training_log_fold_1.csv
 training_log.csv
 training_metrics.png
 augmented_images/
+sequential_pokemon_classifier.h5
