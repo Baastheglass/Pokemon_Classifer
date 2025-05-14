@@ -10,7 +10,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from main import predict_pokemon
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            static_url_path='/static', 
+            static_folder='static',
+            template_folder='templates')
+
 app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
