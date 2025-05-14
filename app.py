@@ -1,10 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 import os
-from main import predict_pokemon
+import tempfile
 from werkzeug.utils import secure_filename
+import sys
+from pathlib import Path
+
+# Add the current directory to path to ensure imports work
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from main import predict_pokemon
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Ensure upload folder exists
