@@ -7,13 +7,16 @@
     },
     {
       "src": "static/**",
-      "use": "@vercel/static" 
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
       "dest": "/static/$1"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
