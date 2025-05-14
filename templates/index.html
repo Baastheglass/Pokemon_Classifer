@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pokemon Classifier</h1>
+            <p>Upload an image to identify the Pokemon!</p>
+        </header>
+
+        <main>
+            <div class="upload-container">
+                <div class="upload-area" id="dropZone">
+                    <div class="upload-content">
+                        <img src="{{ url_for('static', filename='upload-icon.svg') }}" alt="Upload" id="previewImage">
+                        <p>Drag and drop an image here or click to upload</p>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+                </div>
+                <button id="uploadButton" class="primary-button" disabled>Identify Pokemon</button>
+            </div>
+
+            <div class="results-container" style="display: none;">
+                <h2>Results</h2>
+                <div class="prediction-results">
+                    <div class="top-prediction">
+                        <h3>Top Prediction</h3>
+                        <div class="pokemon-name"></div>
+                        <div class="confidence"></div>
+                    </div>
+                    <div class="other-predictions">
+                        <h3>Other Possibilities</h3>
+                        <ul class="predictions-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing image...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 
