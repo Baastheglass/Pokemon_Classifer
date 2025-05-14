@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 
@@ -77,22 +77,61 @@ def create_sequential_pokemon_model(input_shape=(128, 128, 3), num_classes=809):
     
     return model
 
-def predict_pokemon(image_path, model, label_encoder):
+def get_pokemon_classes():
+    # This function should return the list of Pokémon classes in the order they were encoded
+    # If you have this information saved somewhere, load it from there
+    # Otherwise, you'll need to recreate it by loading and encoding your training data
+    
+    image_dir = './augmented_images'  # Update this path if needed
+    _, labels = load_pokemon_data(image_dir)
+    print(_)
+    print(labels)
+    label_encoder = LabelEncoder()
+    label_encoder.fit(labels)
+
+    return label_encoder.classes_
+
+def predict_pokemon(image_path, top_k=1):
+    model = load_model('sequential_pokemon_classifier.h5')
     img = cv2.imread(image_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (128, 128))
     img = np.expand_dims(img, axis=0) / 255.0
     
-    pred = model.predict(img)
-    return label_encoder.inverse_transform([np.argmax(pred)])[0]
+    predictions = model.predict(img)[0]
+    
+    # Get ordered list of class names (Pokémon names)
+    pokemon_classes = get_pokemon_classes()
+    print(pokemon_classes)
+    # Find top-k predictions
+    top_indices = np.argsort(predictions)[::-1][:top_k]
+    top_probabilities = predictions[top_indices]
+    top_pokemon_names = [pokemon_classes[i] for i in top_indices]
+    
+    # Create a formatted output
+    results = []
+    for i, (name, prob) in enumerate(zip(top_pokemon_names, top_probabilities)):
+        results.append({
+            "rank": i+1,
+            "pokemon": name,
+            "probability": float(prob),
+            "confidence": f"{prob*100:.2f}%"
+        })
+    
+    return {
+        "top_prediction": results[0]["pokemon"],
+        "confidence": results[0]["confidence"],
+        "all_results": results
+    }
+
 
 if __name__ == "__main__":
     # # Load your images
     # image_dir = './augmented_images'  # Update this path
     # X, y = load_pokemon_data(image_dir)
     # print("Num_pokemon:" + str(len(y)))
-    # # Encode labels
-    # label_encoder = LabelEncoder()
+    # Encode labels
+    label_encoder = LabelEncoder()
     # y_encoded = label_encoder.fit_transform(y)
     # y_categorical = to_categorical(y_encoded)
 
@@ -115,4 +154,4 @@ if __name__ == "__main__":
 
     # # 3. Save model
     # model.save('sequential_pokemon_classifier.h5')
-    predict_pokemon("./images/abra.png", model, label_encoder)
+    print(predict_pokemon("./images/abra.png"))
