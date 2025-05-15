@@ -10,6 +10,33 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropou
 from tensorflow.keras.optimizers import Adam
 from asgiref.wsgi import WsgiToAsgi
 import uvicorn
+import json
+
+def save_pokemon_classes(classes, json_path='pokemon_classes.json'):
+    """
+    Save Pokémon classes to a JSON file
+    
+    Args:
+        classes (list): List of Pokémon class names
+        json_path (str): Path to save the JSON file
+    """
+    with open(json_path, 'w') as f:
+        json.dump({'classes': classes.tolist()}, f)
+    print(f"Saved {len(classes)} Pokémon classes to {json_path}")
+    
+def load_pokemon_classes(json_path='pokemon_classes.json'):
+    """
+    Load Pokémon classes from a JSON file
+    
+    Args:
+        json_path (str): Path to the JSON file with classes
+        
+    Returns:
+        numpy.ndarray: Array of Pokémon class names
+    """
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    return np.array(data['classes'])
 
 def load_pokemon_data(image_dir):
     images = []
@@ -79,16 +106,32 @@ def create_sequential_pokemon_model(input_shape=(128, 128, 3), num_classes=809):
     
     return model
 
-def get_pokemon_classes():
-    # This function should return the list of Pokémon classes in the order they were encoded
-    # If you have this information saved somewhere, load it from there
-    # Otherwise, you'll need to recreate it by loading and encoding your training data
+def get_pokemon_classes(json_path='pokemon_classes.json'):
+    """
+    Return the list of Pokémon classes in the order they were encoded
+    First tries to load from JSON file, generates from data if file not found
     
+    Args:
+        json_path (str): Path to the JSON file with classes
+        
+    Returns:
+        numpy.ndarray: Array of Pokémon class names
+    """
+    # Try to load from JSON file first
+    try:
+        return load_pokemon_classes(json_path)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print(f"JSON file {json_path} not found or invalid. Regenerating classes from images.")
+        
+    # If JSON doesn't exist, generate from scratch
     image_dir = './augmented_images'  # Update this path if needed
     _, labels = load_pokemon_data(image_dir)
     label_encoder = LabelEncoder()
     label_encoder.fit(labels)
-
+    
+    # Save for future use
+    save_pokemon_classes(label_encoder.classes_, json_path)
+    
     return label_encoder.classes_
 
 def predict_pokemon(image_path, top_k=1):
@@ -218,4 +261,4 @@ if __name__ == "__main__":
         uvicorn.run(asgi_app, host="0.0.0.0", port=5000)
     except Exception as e:
         print(e)
-    pass
+    # pass
