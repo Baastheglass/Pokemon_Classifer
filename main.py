@@ -212,6 +212,7 @@ if __name__ == "__main__":
     #print(predict_pokemon_tflite("./images/abra.png"))
     try:
         from app import app
-        app.run(debug=False)
+        app.run(debug=False, port=5000)
     except Exception as e:
         print(e)
+    pass
