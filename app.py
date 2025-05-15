@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify
 import os
-import tempfile
 from werkzeug.utils import secure_filename
 import sys
 from pathlib import Path
