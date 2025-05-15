@@ -209,4 +209,9 @@ if __name__ == "__main__":
 
     # # 3. Save model
     # model.save('sequential_pokemon_classifier.h5')
-    print(predict_pokemon_tflite("./images/abra.png"))
+    #print(predict_pokemon_tflite("./images/abra.png"))
+    try:
+        from app import app
+        app.run(debug=False)
+    except Exception as e:
+        print(e)
