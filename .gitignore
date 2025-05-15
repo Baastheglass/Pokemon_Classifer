@@ -11,3 +11,4 @@ training_metrics.png
 augmented_images/
 sequential_pokemon_classifier.h5
 __pycache__/
+test.py

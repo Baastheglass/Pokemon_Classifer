@@ -7,7 +7,7 @@ from pathlib import Path
 # Add the current directory to path to ensure imports work
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from main import predict_pokemon
+from main import predict_pokemon_tflite
 
 app = Flask(__name__, 
             static_url_path='/static', 
@@ -44,7 +44,7 @@ def predict():
         file.save(filepath)
         
         try:
-            result = predict_pokemon(filepath, top_k=5)
+            result = predict_pokemon_tflite(filepath, top_k=5)
             os.remove(filepath)  # Clean up the uploaded file
             return jsonify(result)
         except Exception as e:
