@@ -8,6 +8,8 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
+from asgiref.wsgi import WsgiToAsgi
+import uvicorn
 
 def load_pokemon_data(image_dir):
     images = []
@@ -212,7 +214,8 @@ if __name__ == "__main__":
     #print(predict_pokemon_tflite("./images/abra.png"))
     try:
         from app import app
-        app.run(debug=False, port=5000)
+        asgi_app = WsgiToAsgi(app)
+        uvicorn.run(asgi_app, host="0.0.0.0", port=5000)
     except Exception as e:
         print(e)
     pass
